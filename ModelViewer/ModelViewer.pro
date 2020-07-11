@@ -17,13 +17,32 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    modelview.cpp
 
 HEADERS += \
-    mainwindow.h
+    mainwindow.h \
+    modelview.h
 
 FORMS += \
     mainwindow.ui
+
+unix: !macx {
+    INCLUDEPATH +=  /usr/include
+    LIBS += /usr/lib/libassimp.so
+}
+
+macx {
+    INCLUDEPATH +=  /usr/local/include
+    LIBS += /usr/local/lib/libassimp.dylib
+}
+
+win32 {
+    INCLUDEPATH += "C:/Assimp3/include"
+    LIBS += -L"C:/Assimp3/lib/Release" -lassimp
+}
+
+
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -42,3 +61,10 @@ else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../JEng
 else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../JEngine/release/JEngine.lib
 else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../JEngine/debug/JEngine.lib
 else:unix: PRE_TARGETDEPS += $$OUT_PWD/../JEngine/libJEngine.a
+
+DISTFILES +=
+
+RESOURCES += \
+    Shaders.qrc
+
+

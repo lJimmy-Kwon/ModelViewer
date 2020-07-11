@@ -1,4 +1,4 @@
-QT += gui
+QT += gui core
 
 TEMPLATE = lib
 CONFIG += staticlib
@@ -17,10 +17,29 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    jengine.cpp
+    ModelLoader/modelloader.cpp \
+    jengine.cpp \
+    testMain.cpp
 
 HEADERS += \
+    ModelLoader/DataStructures.inl \
+    ModelLoader/modelloader.h \
     jengine.h
+    unix: !macx {
+        INCLUDEPATH +=  /usr/include
+        LIBS += /usr/lib/libassimp.so
+    }
+
+    macx {
+        INCLUDEPATH +=  /usr/local/include
+        LIBS += /usr/local/lib/libassimp.dylib
+    }
+
+    win32 {
+        INCLUDEPATH += "C:/Assimp3/include"
+        LIBS += -L"C:/Assimp3/lib/Release" -lassimp
+    }
+
 
 # Default rules for deployment.
 unix {
