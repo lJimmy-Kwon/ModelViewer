@@ -5,6 +5,7 @@
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLBuffer>
+#include <QOpenGLTexture>
 
 #include <QDebug>
 
@@ -29,12 +30,16 @@ private:
     QOpenGLShaderProgram* m_program;
     QOpenGLBuffer m_vertex;
     QOpenGLBuffer m_indices = QOpenGLBuffer(QOpenGLBuffer::IndexBuffer);
+    QOpenGLTexture* m_texture;
+    QOpenGLBuffer m_textureUVBuffer;
 
 
     ModelLoader* model;
     QVector<float> *vertices;
     QVector<float> *normals;
     QVector<unsigned int> *indices;
+    QVector<QVector<float> > *textureUV;
+
 
 signals:
 
