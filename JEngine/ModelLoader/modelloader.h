@@ -28,6 +28,9 @@ public:
     QVector<float> m_vertices;
     QVector<float> m_normals;
     QVector<unsigned int> m_indices;
+    QVector<QVector<float> > m_textureUV;
+    QVector<unsigned int > m_textureUVComponents;
+
 
     QVector<QSharedPointer<MaterialInfo>> m_materials;
     QVector<QSharedPointer<Mesh>> m_meshes;

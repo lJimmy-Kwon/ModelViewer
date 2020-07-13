@@ -6,19 +6,19 @@ ModelView::ModelView(QWidget *parent) : QOpenGLWidget(parent)
 
     qDebug() << __func__;
     model = new ModelLoader();
-    model->Load("/Users/jimmy/Desktop/plain.obj");
+    model->Load("/Users/jimmy/Desktop/box.obj");
 
     model->getBufferData(&vertices, &normals, &indices);
 
     qDebug() << " vertices : " << vertices->size();
-    qDebug() << " normals : " << normals->size();
-    qDebug() << " indices : " << indices->size();
+    qDebug() << " normals : "  << normals->size();
+    qDebug() << " indices : "  << indices->size();
 
     qDebug() << " verts ";
-    qDebug() << vertices[0];
+//    qDebug() << vertices[0];
 
     qDebug() << " index ";
-    qDebug() << indices[0];
+//    qDebug() << indices[0];
 
 }
 

@@ -6,14 +6,14 @@
 
 
 ModelLoader::ModelLoader()
-{    
+{
 
 }
 
 bool ModelLoader::Load(QString filePath)
 {
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile( filePath.toStdString(),
+    const aiScene* scene = importer.ReadFile(filePath.toStdString(),
             aiProcess_GenSmoothNormals      |
             aiProcess_CalcTangentSpace      |
             aiProcess_Triangulate           |
@@ -28,6 +28,7 @@ bool ModelLoader::Load(QString filePath)
 
     if(scene->HasMaterials())
     {
+        qDebug() << "Material loading..";
         for(unsigned int ii=0; ii<scene->mNumMaterials; ++ii)
         {
             QSharedPointer<MaterialInfo> mater = processMaterial(scene->mMaterials[ii]);
@@ -76,6 +77,9 @@ QSharedPointer<MaterialInfo> ModelLoader::processMaterial(aiMaterial *material)
     int shadingModel;
     material->Get( AI_MATKEY_SHADING_MODEL, shadingModel );
 
+    qDebug() << "shadingModel " << shadingModel;
+
+
     if(shadingModel != aiShadingMode_Phong && shadingModel != aiShadingMode_Gouraud)
     {
         qDebug() << "This mesh's shading model is not implemented in this loader, setting to default material";
@@ -93,10 +97,14 @@ QSharedPointer<MaterialInfo> ModelLoader::processMaterial(aiMaterial *material)
         material->Get( AI_MATKEY_COLOR_SPECULAR, spec);
         material->Get( AI_MATKEY_SHININESS, shine);
 
-        mater->Ambient = QVector3D(amb.r, amb.g, amb.b);
-        mater->Diffuse = QVector3D(dif.r, dif.g, dif.b);
+        mater->Ambient  = QVector3D(amb.r, amb.g, amb.b);
+        mater->Diffuse  = QVector3D(dif.r, dif.g, dif.b);
         mater->Specular = QVector3D(spec.r, spec.g, spec.b);
         mater->Shininess = shine;
+
+        qDebug() << "Ambient " << mater->Ambient;
+        qDebug() << "Diffuse " << mater->Diffuse;
+        qDebug() << "Specular " << mater->Specular;
 
         mater->Ambient *= .2f;
         if( mater->Shininess == 0.0) mater->Shininess = 30;
@@ -127,7 +135,7 @@ QSharedPointer<Mesh> ModelLoader::processMesh(aiMesh *mesh)
     }
 
     // Get Normals
-    if(mesh->HasNormals())
+    if( mesh->HasNormals() )
     {
         for(uint ii=0; ii<mesh->mNumVertices; ++ii)
         {
@@ -136,6 +144,34 @@ QSharedPointer<Mesh> ModelLoader::processMesh(aiMesh *mesh)
             m_normals.push_back(vec.y);
             m_normals.push_back(vec.z);
         };
+    }
+
+    // Get Texture coordinates
+    if(mesh->GetNumUVChannels() > 0)
+    {
+        if((unsigned int)m_textureUV.size() < mesh->GetNumUVChannels()) // Caution, assumes all meshes in this model have same number of uv channels
+        {
+            m_textureUV.resize(mesh->GetNumUVChannels());
+            m_textureUVComponents.resize(mesh->GetNumUVChannels());
+        }
+
+        for( unsigned int ich = 0; ich < mesh->GetNumUVChannels(); ++ich)
+        {
+            m_textureUVComponents[ich] = mesh->mNumUVComponents[ich];
+
+            for(uint iind = 0; iind<mesh->mNumVertices; ++iind)
+            {
+                m_textureUV[ich].push_back(    mesh->mTextureCoords[ich][iind].x);
+                if(mesh->mNumUVComponents[ich] > 1)
+                {
+                    m_textureUV[ich].push_back(mesh->mTextureCoords[ich][iind].y);
+                    if(mesh->mNumUVComponents[ich] > 2)
+                    {
+                        m_textureUV[ich].push_back(    mesh->mTextureCoords[ich][iind].z);
+                    }
+                }
+            }
+        }
     }
 
     // Get mesh indexes
@@ -158,4 +194,3 @@ QSharedPointer<Mesh> ModelLoader::processMesh(aiMesh *mesh)
 
     return newMesh;
 }
-
