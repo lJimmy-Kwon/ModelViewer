@@ -17,5 +17,12 @@ public:
 
 private:
     Ui::MainWindow *ui;
+
+    void keyPressEvent(QKeyEvent *event) override;
+    void keyReleaseEvent(QKeyEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *e) override;
+
 };
 #endif // MAINWINDOW_H

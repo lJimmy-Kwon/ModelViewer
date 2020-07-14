@@ -17,14 +17,16 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    Camera/camera.cpp \
+    Input/input.cpp \
     ModelLoader/modelloader.cpp \
-    jengine.cpp \
     testMain.cpp
 
 HEADERS += \
+    Camera/camera.h \
+    Input/input.h \
     ModelLoader/DataStructures.inl \
-    ModelLoader/modelloader.h \
-    jengine.h
+    ModelLoader/modelloader.h
     unix: !macx {
         INCLUDEPATH +=  /usr/include
         LIBS += /usr/lib/libassimp.so

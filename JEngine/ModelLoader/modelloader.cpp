@@ -47,7 +47,7 @@ bool ModelLoader::Load(QString filePath, PathType pathType)
             aiProcess_FlipUVs
                                               );
 
-    if( !scene)
+    if( !scene )
     {
         qDebug() << "Error loading file: (assimp:) " << importer.GetErrorString();
         return false;

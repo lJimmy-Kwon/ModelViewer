@@ -8,6 +8,10 @@
 #include <QOpenGLTexture>
 
 #include <QDebug>
+#include <QApplication>
+
+#include "Camera/camera.h"
+
 
 class ModelLoader;
 
@@ -23,7 +27,6 @@ protected:
     void resizeGL(int w, int h) override;
     void paintGL() override;
 
-    void update();
     void printContextInformation();
 private:
     QOpenGLVertexArrayObject m_object;
@@ -40,6 +43,16 @@ private:
     QVector<unsigned int> *indices;
     QVector<QVector<float> > *textureUV;
 
+    void checkInput();
+    void keyPressEvent(QKeyEvent *event) override;
+    void keyReleaseEvent(QKeyEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *e) override;
+
+    Camera camera;
+
+    friend class MainWindow;
 
 signals:
 
