@@ -41,10 +41,11 @@ ModelView::~ModelView()
 
 void ModelView::initializeGL()
 {
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST | GL_CULL_FACE);
 
     m_texture = new QOpenGLTexture(*img_path("/Users/jimmy/Desktop/paint.png"));
+    m_texture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+    m_texture->setMagnificationFilter(QOpenGLTexture::Linear);
 
     m_program = new QOpenGLShaderProgram(); // only one variable to be allocated dynamicaly.
     m_program->addShaderFromSourceFile(QOpenGLShader::Vertex  , ":/Shaders/model.vert");
@@ -123,6 +124,7 @@ void ModelView::paintGL()
             projectionMatrix = modelTransformMatrix * projectionMatrix;
             m_program->setUniformValue("projectionMatrix", projectionMatrix );
         }
+
         m_object.bind();
         m_texture->bind();
         glDrawElements(GL_TRIANGLES, indices->size(), GL_UNSIGNED_INT, 0 );

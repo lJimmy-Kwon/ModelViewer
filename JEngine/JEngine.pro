@@ -19,13 +19,16 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     Camera/camera.cpp \
     Input/input.cpp \
-    ModelLoader/modelloader.cpp \
-    testMain.cpp
+    ModelLoader/mesh.cpp \
+    ModelLoader/model.cpp \
+    ModelLoader/modelloader.cpp
 
 HEADERS += \
     Camera/camera.h \
     Input/input.h \
     ModelLoader/DataStructures.inl \
+    ModelLoader/mesh.h \
+    ModelLoader/model.h \
     ModelLoader/modelloader.h
     unix: !macx {
         INCLUDEPATH +=  /usr/include

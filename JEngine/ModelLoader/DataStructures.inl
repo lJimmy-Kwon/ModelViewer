@@ -29,3 +29,4 @@ struct Node
     QVector<QSharedPointer<Mesh> > meshes;
     QVector<Node> nodes;
 };
+

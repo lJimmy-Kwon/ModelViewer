@@ -29,8 +29,8 @@ protected:
 
     void printContextInformation();
 private:
-    QOpenGLVertexArrayObject m_object;
     QOpenGLShaderProgram* m_program;
+    QOpenGLVertexArrayObject m_object;
     QOpenGLBuffer m_vertex;
     QOpenGLBuffer m_indices = QOpenGLBuffer(QOpenGLBuffer::IndexBuffer);
     QOpenGLTexture* m_texture;
