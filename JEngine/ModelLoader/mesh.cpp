@@ -17,13 +17,12 @@ Mesh::Mesh(const Mesh &mesh)
 
     vertices = mesh.vertices;
     indices  = mesh.indices;
-    for(unsigned int i = 0; i < mesh.textures.size(); i++){
-        textures[i].type = mesh.textures[i].type;
-        textures[i].image = mesh.textures[i].image;
-    }
+
     VAO = mesh.VAO;
     VBO = mesh.VBO;
     EBO = mesh.EBO;
+
+    textures = mesh.textures;
 }
 
 Mesh::~Mesh()
@@ -108,7 +107,8 @@ void Mesh::setupMesh()
     }
 
     // Release ( unbind ) all
+    VAO->release();
     EBO->release();
     VBO->release();
-    VAO->release();
+
 }

@@ -11,6 +11,7 @@
 #include <QApplication>
 
 #include "Camera/camera.h"
+#include "ModelLoader/model.h"
 
 
 class ModelLoader;
@@ -30,18 +31,6 @@ protected:
     void printContextInformation();
 private:
     QOpenGLShaderProgram* m_program;
-    QOpenGLVertexArrayObject m_object;
-    QOpenGLBuffer m_vertex;
-    QOpenGLBuffer m_indices = QOpenGLBuffer(QOpenGLBuffer::IndexBuffer);
-    QOpenGLTexture* m_texture;
-    QOpenGLBuffer m_textureUVBuffer;
-
-
-    ModelLoader* model;
-    QVector<float> *vertices;
-    QVector<float> *normals;
-    QVector<unsigned int> *indices;
-    QVector<QVector<float> > *textureUV;
 
     void checkInput();
     void keyPressEvent(QKeyEvent *event) override;
@@ -51,6 +40,7 @@ private:
     void mouseMoveEvent(QMouseEvent *e) override;
 
     Camera camera;
+    Model* model;
 
     friend class MainWindow;
 
