@@ -70,7 +70,6 @@ void Mesh::Draw(QOpenGLShaderProgram &program)
 
 void Mesh::setupMesh()
 {
-
     // Create Buffer ( Do not release util VAO is created)
     VBO->create();
     VBO->bind();

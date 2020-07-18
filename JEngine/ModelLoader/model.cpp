@@ -65,14 +65,20 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
 
         if(mesh->mTextureCoords[0]){
             QVector2D vec;
+            qDebug() << mesh->mTextureCoords[0][i].x;
+            qDebug() << mesh->mTextureCoords[0][i].y;
+
             vec.setX(mesh->mTextureCoords[0][i].x);
             vec.setY(mesh->mTextureCoords[0][i].y);
+            vertex.TexCoords = vec;
         }
         else{
             vertex.TexCoords = QVector2D(0.0f, 0.0f);
         }
 
         vertices.push_back(vertex);
+
+
     }
 
     for(unsigned int i = 0; i < mesh->mNumFaces; i++){
@@ -94,6 +100,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
         textures.append(specularMaps);
 
     }
+
 
     return Mesh(vertices, indices, textures);
 }
