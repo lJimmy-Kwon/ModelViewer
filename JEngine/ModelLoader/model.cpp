@@ -17,7 +17,7 @@ void Model::loadModel(QString path)
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(path.toStdString(),
                                              aiProcess_Triangulate |
-                                             aiProcess_FlipUVs );
+                                             aiProcess_FlipUVs);
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode){
         qDebug() << "ERROR::ASSIMP::" << importer.GetErrorString() << endl;
         return;
@@ -65,9 +65,6 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
 
         if(mesh->mTextureCoords[0]){
             QVector2D vec;
-            qDebug() << mesh->mTextureCoords[0][i].x;
-            qDebug() << mesh->mTextureCoords[0][i].y;
-
             vec.setX(mesh->mTextureCoords[0][i].x);
             vec.setY(mesh->mTextureCoords[0][i].y);
             vertex.TexCoords = vec;

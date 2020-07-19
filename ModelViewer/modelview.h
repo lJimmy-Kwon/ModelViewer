@@ -9,9 +9,11 @@
 
 #include <QDebug>
 #include <QApplication>
+#include <QMap>
 
 #include "Camera/camera.h"
 #include "ModelLoader/model.h"
+
 
 
 class ModelLoader;
@@ -29,6 +31,8 @@ protected:
     void paintGL() override;
 
     void printContextInformation();
+    void setProjectionMatrix(QVector3D translate, float degree, QVector3D rotationAxis);
+
 private:
     QOpenGLShaderProgram* m_program;
 
@@ -40,7 +44,7 @@ private:
     void mouseMoveEvent(QMouseEvent *e) override;
 
     Camera camera;
-    Model* model;
+    QMap<QString, Model*> models;
 
     friend class MainWindow;
 

@@ -18,7 +18,7 @@ ModelView::~ModelView()
 
 void ModelView::initializeGL()
 {
-    glEnable(GL_DEPTH_TEST | GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
 
     m_program = new QOpenGLShaderProgram(); // only one variable to be allocated dynamicaly.
     m_program->addShaderFromSourceFile(QOpenGLShader::Vertex  , ":/Shaders/model.vert");
@@ -26,7 +26,7 @@ void ModelView::initializeGL()
 
     m_program->link();
 
-    model = new Model("/Users/jimmy/Desktop/Scene.obj");
+    models["cube"] = new Model("/Users/jimmy/Desktop/Scene.obj");
 }
 
 void ModelView::resizeGL(int w, int h)
@@ -35,30 +35,46 @@ void ModelView::resizeGL(int w, int h)
     Q_UNUSED(h)
 }
 
+void ModelView::setProjectionMatrix(QVector3D translate = {0, 0, 0},
+                                    float degree = 0,
+                                    QVector3D rotationAxis = {0, 0, 0}){
+
+    QMatrix4x4 projection;
+    projection.setToIdentity();
+    projection.perspective(60.0f, ((float)width() / height()), 0.1f, 10.0f );
+
+    QMatrix4x4 view = camera.getWorldToViewMatrix();
+
+    QMatrix4x4 modelMatrix;
+    modelMatrix.setToIdentity();
+    modelMatrix.translate( translate );
+    modelMatrix.rotate( degree, rotationAxis );
+
+    m_program->setUniformValue("pMatrix", projection );
+    m_program->setUniformValue("vMatrix", view );
+    m_program->setUniformValue("mMatrix", modelMatrix );
+
+}
+
 void ModelView::paintGL()
 {
     checkInput();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     m_program->bind();
     {
-        {
-            QMatrix4x4 modelTransformMatrix;
-            modelTransformMatrix.setToIdentity();
-            modelTransformMatrix.perspective(60.0f, ((float)width() / height()), 0.1f, 10.0f );
-            modelTransformMatrix = modelTransformMatrix * camera.getWorldToViewMatrix();
+        { //position
+            setProjectionMatrix();
+        }
+        { //color
+            QVector3D lightColor(1.0f, 1.0f, 1.0f);
+            QVector3D toyColor(1.0f, 0.5f, 0.31f);
+            QVector3D result = lightColor * toyColor;
 
-            QMatrix4x4 projectionMatrix;
-            projectionMatrix.setToIdentity();
-            projectionMatrix.translate( 0.0f, 0.0f, -1.0f);
-            projectionMatrix.rotate( 0.0f, QVector3D(1.0f, 0.0f, 0.0f) );
-
-            projectionMatrix = modelTransformMatrix * projectionMatrix;
-            m_program->setUniformValue("projectionMatrix", projectionMatrix );
         }
     }
-    m_program->release();
 
-    model->Draw(*m_program);
+    m_program->release();
+    models["cube"]->Draw(*m_program);
 
     QOpenGLWidget::update();
 }
