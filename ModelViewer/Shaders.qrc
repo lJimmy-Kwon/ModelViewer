@@ -2,5 +2,6 @@
     <qresource prefix="/">
         <file>Shaders/model.vert</file>
         <file>Shaders/model.frag</file>
+        <file>Shaders/light.frag</file>
     </qresource>
 </RCC>

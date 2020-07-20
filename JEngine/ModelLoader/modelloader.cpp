@@ -25,6 +25,7 @@ QString findFile(QString relativeFilePath, int scanDepth)
         }
         str.prepend("../");
     }
+
     return "";
 }
 

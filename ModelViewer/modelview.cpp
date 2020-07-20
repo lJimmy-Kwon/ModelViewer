@@ -13,20 +13,32 @@ ModelView::ModelView(QWidget *parent) : QOpenGLWidget(parent)
 
 ModelView::~ModelView()
 {
-
 }
 
 void ModelView::initializeGL()
 {
     glEnable(GL_DEPTH_TEST);
 
-    m_program = new QOpenGLShaderProgram(); // only one variable to be allocated dynamicaly.
-    m_program->addShaderFromSourceFile(QOpenGLShader::Vertex  , ":/Shaders/model.vert");
-    m_program->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/Shaders/model.frag");
+    // program for normal objects
+    {
+        program_object = new QOpenGLShaderProgram(); // only one variable to be allocated dynamicaly.
+        program_object->addShaderFromSourceFile(QOpenGLShader::Vertex  , ":/Shaders/model.vert");
+        program_object->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/Shaders/model.frag");
 
-    m_program->link();
+        program_object->link();
+    }
 
-    models["cube"] = new Model("/Users/jimmy/Desktop/Scene.obj");
+    // program for light source
+    {
+        program_light = new QOpenGLShaderProgram(); // only one variable to be allocated dynamicaly.
+        program_light->addShaderFromSourceFile(QOpenGLShader::Vertex  , ":/Shaders/model.vert");
+        program_light->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/Shaders/light.frag");
+
+        program_light->link();
+    }
+
+    models["cube"]  = new Model("/Users/jimmy/Desktop/cube.obj");
+    models["light"] = new Model("/Users/jimmy/Desktop/light.obj");
 }
 
 void ModelView::resizeGL(int w, int h)
@@ -35,24 +47,40 @@ void ModelView::resizeGL(int w, int h)
     Q_UNUSED(h)
 }
 
-void ModelView::setProjectionMatrix(QVector3D translate = {0, 0, 0},
+void ModelView::setProjectionMatrix(QOpenGLShaderProgram* program,
+                                    QVector3D translate = {0, 0, 0},
                                     float degree = 0,
                                     QVector3D rotationAxis = {0, 0, 0}){
 
-    QMatrix4x4 projection;
-    projection.setToIdentity();
-    projection.perspective(60.0f, ((float)width() / height()), 0.1f, 10.0f );
-
-    QMatrix4x4 view = camera.getWorldToViewMatrix();
-
+    program->bind();
     QMatrix4x4 modelMatrix;
     modelMatrix.setToIdentity();
     modelMatrix.translate( translate );
     modelMatrix.rotate( degree, rotationAxis );
 
-    m_program->setUniformValue("pMatrix", projection );
-    m_program->setUniformValue("vMatrix", view );
-    m_program->setUniformValue("mMatrix", modelMatrix );
+    QMatrix4x4 view = camera.getWorldToViewMatrix();
+
+    QMatrix4x4 projection;
+    projection.setToIdentity();
+    projection.perspective(60.0f, ((float)width() / height()), 0.1f, 10.0f );
+
+    program->setUniformValue("mMatrix", modelMatrix );
+    program->setUniformValue("vMatrix", view );
+    program->setUniformValue("pMatrix", projection );
+
+    program->setUniformValue("normalMatrix", modelMatrix.inverted().transposed().toGenericMatrix<3, 3>());
+
+    program->release();
+
+}
+
+void ModelView::setLightingProperties(QOpenGLShaderProgram* program,
+                                      float ambientStrength){
+    program->bind();
+    program->setUniformValue("ambientStrength", ambientStrength);
+    program->setUniformValue("lightPosition", m_globalLightPosition);
+    program->setUniformValue("lightColor", m_globalLightColor);
+    program->release();
 
 }
 
@@ -60,21 +88,24 @@ void ModelView::paintGL()
 {
     checkInput();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    m_program->bind();
-    {
-        { //position
-            setProjectionMatrix();
-        }
-        { //color
-            QVector3D lightColor(1.0f, 1.0f, 1.0f);
-            QVector3D toyColor(1.0f, 0.5f, 0.31f);
-            QVector3D result = lightColor * toyColor;
+    m_globalLightPosition = {0, 2, 0};
+    m_globalLightColor = {1, 1, 1};
 
-        }
+
+
+    //cube
+    {
+        setProjectionMatrix(program_object, {0, 0, -2}, 90, {1, 0, 0});
+        setLightingProperties(program_object, 0.2);
+        models["cube"]->Draw(*program_object);
     }
 
-    m_program->release();
-    models["cube"]->Draw(*m_program);
+    //light
+    {
+        setProjectionMatrix(program_light, m_globalLightPosition);
+        models["light"]->Draw(*program_light);
+    }
+
 
     QOpenGLWidget::update();
 }
@@ -87,27 +118,27 @@ void ModelView::checkInput()
 
         QApplication::quit();
 
-    }else if(Input::keyPressed(Qt::Key::Key_5)){
+    }if(Input::keyPressed(Qt::Key::Key_5)){
 
         camera.moveForward();
 
-    }else if(Input::keyPressed(Qt::Key::Key_2)){
+    }if(Input::keyPressed(Qt::Key::Key_2)){
 
         camera.moveBackward();
 
-    }else if(Input::keyPressed(Qt::Key::Key_1)){
+    }if(Input::keyPressed(Qt::Key::Key_1)){
 
         camera.strafeLeft();
 
-    }else if(Input::keyPressed(Qt::Key::Key_3)){
+    }if(Input::keyPressed(Qt::Key::Key_3)){
 
         camera.movestrafeRight();
 
-    }else if(Input::keyPressed(Qt::Key::Key_4)){
+    }if(Input::keyPressed(Qt::Key::Key_4)){
 
         camera.moveUp();
 
-    }else if(Input::keyPressed(Qt::Key::Key_6)){
+    }if(Input::keyPressed(Qt::Key::Key_6)){
 
         camera.moveDown();
 

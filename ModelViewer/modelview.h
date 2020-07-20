@@ -31,10 +31,12 @@ protected:
     void paintGL() override;
 
     void printContextInformation();
-    void setProjectionMatrix(QVector3D translate, float degree, QVector3D rotationAxis);
+    void setProjectionMatrix(QOpenGLShaderProgram* program, QVector3D translate, float degree, QVector3D rotationAxis);
+    void setLightingProperties(QOpenGLShaderProgram *program, float ambientStrength = 0.1);
 
 private:
-    QOpenGLShaderProgram* m_program;
+    QOpenGLShaderProgram* program_object;
+    QOpenGLShaderProgram* program_light;
 
     void checkInput();
     void keyPressEvent(QKeyEvent *event) override;
@@ -45,6 +47,9 @@ private:
 
     Camera camera;
     QMap<QString, Model*> models;
+
+    QVector3D m_globalLightPosition;
+    QVector3D m_globalLightColor;
 
     friend class MainWindow;
 
