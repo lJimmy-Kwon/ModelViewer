@@ -22,6 +22,7 @@ struct Texture{
     QOpenGLTexture* image;
     QString type;
     QString path;
+    float shininess;
 };
 
 

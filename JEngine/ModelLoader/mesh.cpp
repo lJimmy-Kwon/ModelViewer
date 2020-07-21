@@ -48,6 +48,7 @@ void Mesh::Draw(QOpenGLShaderProgram &program)
         QString number;
         QString name = textures[i].type;
 
+
         if(name == "texture_diffuse"){
             number = QString::number(diffuseNr++);
         }else if( name == "texture_specular"){
@@ -57,6 +58,8 @@ void Mesh::Draw(QOpenGLShaderProgram &program)
         textures[i].image->bind();
     }
 
+
+    program.setUniformValue("shininess", (int)textures[0].shininess);
     glActiveTexture(GL_TEXTURE0);
 
     VAO->bind();

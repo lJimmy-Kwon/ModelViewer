@@ -94,7 +94,6 @@ void ModelView::paintGL()
     m_globalLightColor = {1, 1, 1};
 
 
-
     //cube
     {
         setProjectionMatrix(program_object, {0, 0, -2}, 90, {1, 0, 0});

@@ -124,6 +124,12 @@ QVector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type
             texture.image = new QOpenGLTexture(QImage(directory + '/' + str.C_Str()));
             texture.type = typeName;
             texture.path = str.C_Str();
+            mat->Get( AI_MATKEY_SHININESS, texture.shininess);
+
+            //blender roughness of 0 ~ 1 maps to 0 ~ 900 of shininess when assimp imported it
+            texture.shininess = (texture.shininess / 900) * 128;
+
+
 
             textures.push_back(texture);
         }
