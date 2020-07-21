@@ -32,7 +32,7 @@ protected:
 
     void printContextInformation();
     void setProjectionMatrix(QOpenGLShaderProgram* program, QVector3D translate, float degree, QVector3D rotationAxis);
-    void setLightingProperties(QOpenGLShaderProgram *program, float ambientStrength = 0.1, float specularStrength = 0.5);
+    void setLightingProperties(QOpenGLShaderProgram *program, float ambientStrength = 0.1);
 
 private:
     QOpenGLShaderProgram* program_object;

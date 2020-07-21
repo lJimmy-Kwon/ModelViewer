@@ -38,7 +38,7 @@ void ModelView::initializeGL()
     }
 
     models["ball"]  = new Model("/Users/jimmy/Desktop/box.obj");
-//    models["light"] = new Model("/Users/jimmy/Desktop/light.obj");
+    models["light"] = new Model("/Users/jimmy/Desktop/light.obj");
 }
 
 void ModelView::resizeGL(int w, int h)
@@ -75,11 +75,9 @@ void ModelView::setProjectionMatrix(QOpenGLShaderProgram* program,
 }
 
 void ModelView::setLightingProperties(QOpenGLShaderProgram* program,
-                                      float ambientStrength,
-                                      float specularStrength){
+                                      float ambientStrength){
     program->bind();
     program->setUniformValue("ambientStrength", ambientStrength);
-    program->setUniformValue("specularStrength", specularStrength);
     program->setUniformValue("lightPosition", m_globalLightPosition);
     program->setUniformValue("lightColor", m_globalLightColor);
     program->setUniformValue("viewPos", camera.getPosition());
@@ -107,7 +105,7 @@ void ModelView::paintGL()
     //light
     {
         setProjectionMatrix(program_light, m_globalLightPosition);
-//        models["light"]->Draw(*program_light);
+        models["light"]->Draw(*program_light);
     }
 
 
