@@ -49,11 +49,11 @@ void Mesh::Draw(QOpenGLShaderProgram &program)
         QString name = textures[i].type;
 
         if(name == "texture_diffuse"){
-            number = QString(diffuseNr++);
+            number = QString::number(diffuseNr++);
         }else if( name == "texture_specular"){
-            number = QString(specularNr++);
+            number = QString::number(specularNr++);
         }
-        program.setUniformValue(("material." + name + number).toStdString().c_str(), i);
+        program.setUniformValue((name + number).toStdString().c_str(), i);
         textures[i].image->bind();
     }
 

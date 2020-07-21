@@ -37,8 +37,8 @@ void ModelView::initializeGL()
         program_light->link();
     }
 
-    models["ball"]  = new Model("/Users/jimmy/Desktop/ball.obj");
-    models["light"] = new Model("/Users/jimmy/Desktop/light.obj");
+    models["ball"]  = new Model("/Users/jimmy/Desktop/box.obj");
+//    models["light"] = new Model("/Users/jimmy/Desktop/light.obj");
 }
 
 void ModelView::resizeGL(int w, int h)
@@ -107,7 +107,7 @@ void ModelView::paintGL()
     //light
     {
         setProjectionMatrix(program_light, m_globalLightPosition);
-        models["light"]->Draw(*program_light);
+//        models["light"]->Draw(*program_light);
     }
 
 
