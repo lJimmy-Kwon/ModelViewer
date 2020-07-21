@@ -97,7 +97,7 @@ void ModelView::paintGL()
     //cube
     {
         setProjectionMatrix(program_object, {0, 0, -2}, 90, {1, 0, 0});
-        setLightingProperties(program_object, 0.2);
+        setLightingProperties(program_object, 0.4);
         models["ball"]->Draw(*program_object);
     }
 

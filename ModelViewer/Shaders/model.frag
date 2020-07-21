@@ -18,24 +18,35 @@ uniform int shininess;
 
 void main()
 {
+    //////////////////////////////////
+    ////////// textures //////////////
+    //////////////////////////////////
     vec4 textureColor = texture(texture_diffuse1, TexCoords);
     vec4 specMap = texture(texture_specular1, TexCoords);
 
-    vec3 ambient = ambientStrength * textureColor.rgb;
-
+    //////////////////////////////////
+    ////////// vectors ///////////////
+    //////////////////////////////////
     vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(lightPosition - FragPos);
-
-    float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = diff * lightColor;
-
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);
 
+    //////////////////////////////////
+    ////////// lighings //////////////
+    //////////////////////////////////
+    float amb = ambientStrength ;
+    vec3 ambient = (amb * textureColor.rgb) * lightColor;
+
+    float diff = max(dot(norm, lightDir), 0.0);
+    vec3 diffuse = (diff * textureColor.rgb) * lightColor;
+
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
-    vec3 specular = vec3(specMap) * spec * lightColor;
+    vec3 specular = (specMap.rgb * spec) * lightColor;
 
-    vec4 result = vec4((ambient + diffuse + specular), 1.0f) * textureColor;
-
+    //////////////////////////////////
+    /////////// results //////////////
+    //////////////////////////////////
+    vec4 result = vec4((ambient + diffuse + specular), 1.0f);
     FragColor = result;
 }
