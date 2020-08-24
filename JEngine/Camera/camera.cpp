@@ -31,7 +31,7 @@ void Camera::mouseUpdate(const QVector2D newMousePosition){
     oldMousePosition = newMousePosition;
 }
 
-const float MOVEMENT_SPEED = 0.003f;
+const float MOVEMENT_SPEED = 0.01f;
 void Camera::moveForward()
 {
     position += viewDirection * MOVEMENT_SPEED;

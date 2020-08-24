@@ -48,6 +48,12 @@ bool ModelLoader::Load(QString filePath, PathType pathType)
             aiProcess_FlipUVs
                                               );
 
+    double factor(0.0);
+
+    scene->mMetaData->Get("UnitScaleFactor", factor);
+
+    qDebug() << "factor" << factor;
+
     if( !scene )
     {
         qDebug() << "Error loading file: (assimp:) " << importer.GetErrorString();

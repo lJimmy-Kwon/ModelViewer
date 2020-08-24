@@ -16,6 +16,7 @@ class Model
 
 public:
     explicit Model(QString path);
+    ~Model();
     void Draw(QOpenGLShaderProgram &program);
 
 private:

@@ -5,19 +5,36 @@ Model::Model(QString path)
     loadModel(path);
 }
 
+Model::~Model(){
+
+    for(int i = 0; i < meshes.size(); i++){
+        delete meshes[i].EBO;
+        delete meshes[i].VAO;
+        delete meshes[i].VBO;
+
+        for(int j = 0; j < meshes[i].textures.size(); j++){
+            delete meshes[i].textures[j].image;
+        }
+    }
+}
+
 void Model::Draw(QOpenGLShaderProgram &program)
 {
-    for(unsigned int i = 0; i < meshes.size(); i++){
+    for(int i = 0; i < meshes.size(); i++){
         meshes[i].Draw(program);
     }
 }
+
+
 
 void Model::loadModel(QString path)
 {
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(path.toStdString(),
                                              aiProcess_Triangulate |
-                                             aiProcess_FlipUVs);
+                                             aiProcess_FlipUVs |
+                                             aiProcess_PreTransformVertices );
+
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode){
         qDebug() << "ERROR::ASSIMP::" << importer.GetErrorString() << endl;
         return;
@@ -137,4 +154,3 @@ QVector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type
 
     return textures;
 }
-

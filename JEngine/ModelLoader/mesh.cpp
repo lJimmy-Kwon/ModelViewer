@@ -27,13 +27,7 @@ Mesh::Mesh(const Mesh &mesh)
 
 Mesh::~Mesh()
 {
-//    delete VAO;
-//    delete VBO;
-//    delete EBO;
 
-//    for(unsigned int i = 0; i < textures.size(); i++){
-//        delete textures[i].image;
-//    }
 }
 
 void Mesh::Draw(QOpenGLShaderProgram &program)

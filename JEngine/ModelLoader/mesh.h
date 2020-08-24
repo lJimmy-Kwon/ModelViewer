@@ -40,13 +40,15 @@ public:
 
     void Draw(QOpenGLShaderProgram &program);
 
-private:
-    //render data
-
     /* VAO, VBO, EBO, textures[i].image are should be deleted after draw */
     QOpenGLVertexArrayObject* VAO;
     QOpenGLBuffer* VBO;
     QOpenGLBuffer* EBO;
+
+
+private:
+    //render data
+
 
     void setupMesh();
 

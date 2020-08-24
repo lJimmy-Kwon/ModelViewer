@@ -13,6 +13,7 @@ ModelView::ModelView(QWidget *parent) : QOpenGLWidget(parent)
 
 ModelView::~ModelView()
 {
+
 }
 
 void ModelView::initializeGL()
@@ -37,8 +38,8 @@ void ModelView::initializeGL()
         program_light->link();
     }
 
-    models["ball"]  = new Model("/Users/jimmy/Desktop/box.obj");
-    models["light"] = new Model("/Users/jimmy/Desktop/light.obj");
+    models["ball"]  = new Model("/Users/jimmy/Desktop/Assets/Worm/worm.fbx");
+    models["light"] = new Model("/Users/jimmy/Desktop/Assets/Light/light.obj");
 }
 
 void ModelView::resizeGL(int w, int h)
@@ -91,7 +92,7 @@ void ModelView::paintGL()
     checkInput();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     m_globalLightPosition = {0, 2, 0};
-    m_globalLightColor = {1, 1, 1};
+    m_globalLightColor = {1.0, 0.5, 0.5};
 
 
     //cube
