@@ -19,13 +19,17 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     Camera/camera.cpp \
     Input/input.cpp \
+    Math/matrix.cpp \
     ModelLoader/mesh.cpp \
     ModelLoader/model.cpp \
     ModelLoader/modelloader.cpp
 
 HEADERS += \
     Camera/camera.h \
+    Common/types.h \
+    Common/util.h \
     Input/input.h \
+    Math/matrix.h \
     ModelLoader/DataStructures.inl \
     ModelLoader/mesh.h \
     ModelLoader/model.h \
@@ -44,6 +48,8 @@ HEADERS += \
         INCLUDEPATH += "C:/Assimp3/include"
         LIBS += -L"C:/Assimp3/lib/Release" -lassimp
     }
+
+INCLUDEPATH += $$PWD/Math/glm
 
 
 # Default rules for deployment.

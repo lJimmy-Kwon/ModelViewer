@@ -3,5 +3,6 @@
         <file>Shaders/model.vert</file>
         <file>Shaders/model.frag</file>
         <file>Shaders/light.frag</file>
+        <file>Shaders/light.vert</file>
     </qresource>
 </RCC>

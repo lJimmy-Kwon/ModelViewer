@@ -1,9 +1,14 @@
 #include "mesh.h"
-Mesh::Mesh(QVector<Vertex> vertices, QVector<unsigned int> indices, QVector<Texture> textures)
+Mesh::Mesh(QVector<Vertex> vertices, QVector<unsigned int> indices, QVector<Texture> textures, QVector<VertexBoneData> Bones)
 {
     this->vertices = vertices;
     this->indices  = indices;
     this->textures = textures;
+
+    for(int i = 0 ; i < vertices.size() ; i++){
+        this->vertices[i].bones = Bones[i];
+    }
+
 
     VAO = new QOpenGLVertexArrayObject;
     VBO = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
@@ -36,7 +41,7 @@ void Mesh::Draw(QOpenGLShaderProgram &program)
     unsigned int diffuseNr = 1;
     unsigned int specularNr = 1;
 
-    for( unsigned int i = 0; i < textures.size(); i++){
+    for( int i = 0; i < textures.size(); i++){
         glActiveTexture(GL_TEXTURE0 + i );
 
         QString number;
@@ -97,6 +102,14 @@ void Mesh::setupMesh()
         // vertex texture coords
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+
+        // vertex bone Id location
+        glEnableVertexAttribArray(3);
+        glVertexAttribIPointer(3, 4, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, bones.IDs));
+
+        // vertex bone Weights location
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bones.Weights));
 
         EBO->bind();
     }
