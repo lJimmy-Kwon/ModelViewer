@@ -11,11 +11,79 @@
 #include <QOpenGLBuffer>
 #include <QOpenGLTexture>
 
+struct VertexBoneData
+{
+    uint IDs[4] = {0, 0, 0, 0};
+    float Weights[4] = {0, 0, 0, 0};
+
+    VertexBoneData()
+    {
+        Reset();
+    };
+
+    void Reset()
+    {
+        memset(IDs, 0, 4);
+        memset(Weights, 0, 4);
+    }
+
+    void AddBoneData(uint BoneID, float Weight){
+        for (uint i = 0 ; i < 4 ; i++) {
+            if (Weights[i] == 0.0) {
+                IDs[i]     = BoneID;
+                Weights[i] = Weight;
+                return;
+            }
+        }
+    }
+
+    VertexBoneData(const VertexBoneData &data)
+    {
+        for(uint i = 0 ; i < 4 ; i++){
+            this->IDs[i] = data.IDs[i];
+            this->Weights[i] = data.Weights[i];
+        }
+    }
+
+    VertexBoneData(VertexBoneData &data)
+    {
+        for(uint i = 0 ; i < 4 ; i++){
+            this->IDs[i] = data.IDs[i];
+            this->Weights[i] = data.Weights[i];
+        }
+    }
+
+
+    VertexBoneData* operator=(VertexBoneData& data){
+
+        for(uint i = 0 ; i < 4 ; i++){
+            this->IDs[i] = data.IDs[i];
+            this->Weights[i] = data.Weights[i];
+        }
+        return this;
+    }
+
+};
+
+
 
 struct Vertex{
     QVector3D Position;
     QVector3D Normal;
     QVector2D TexCoords;
+
+    VertexBoneData bones;
+
+    Vertex* operator=(Vertex data){
+
+        this->Position = data.Position;
+        this->Normal = data.Normal;
+        this->TexCoords = data.TexCoords;
+
+        this->bones = data.bones;
+
+        return this;
+    }
 };
 
 struct Texture{
@@ -25,6 +93,17 @@ struct Texture{
     float shininess;
 };
 
+struct BoneInfo
+{
+    QMatrix4x4 BoneOffset;
+    QMatrix4x4 FinalTransformation;
+
+    BoneInfo()
+    {
+        BoneOffset.fill(0);
+        FinalTransformation.fill(0);
+    }
+};
 
 class Mesh
 {
@@ -34,7 +113,7 @@ public:
     QVector<Texture> textures;
 
     Mesh(QVector<Vertex> vertices, QVector<unsigned int> indices,
-         QVector<Texture> textures);
+         QVector<Texture> textures, QVector<VertexBoneData> Bones);
     Mesh(const Mesh& mesh);
     ~Mesh();
 

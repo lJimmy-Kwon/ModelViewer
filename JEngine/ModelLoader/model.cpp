@@ -3,6 +3,8 @@
 Model::Model(QString path)
 {
     loadModel(path);
+    qDebug() << "has animation : " << scene->HasAnimations();
+    m_startTime = (double)clock();
 }
 
 Model::~Model(){
@@ -20,6 +22,23 @@ Model::~Model(){
 
 void Model::Draw(QOpenGLShaderProgram &program)
 {
+
+    if(scene->HasAnimations()){
+
+        float RunningTime = (float)((double)clock() - (double)m_startTime) / CLOCKS_PER_SEC * 10;
+
+        program.bind();
+        QVector<zero4x4> Transforms;
+        this->boneTransform(RunningTime, Transforms);
+
+        for(uint i = 0 ; i < Transforms.size() ; i++) {
+            program.setUniformValue(("gBones[" + QString::number(i) + "]").toStdString().c_str(), Transforms[i]);
+        }
+
+        program.release();
+
+    }
+
     for(int i = 0; i < meshes.size(); i++){
         meshes[i].Draw(program);
     }
@@ -29,11 +48,9 @@ void Model::Draw(QOpenGLShaderProgram &program)
 
 void Model::loadModel(QString path)
 {
-    Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(path.toStdString(),
-                                             aiProcess_Triangulate |
-                                             aiProcess_FlipUVs |
-                                             aiProcess_PreTransformVertices );
+    importer.SetPropertyBool(AI_CONFIG_IMPORT_REMOVE_EMPTY_BONES, true);
+    scene = importer.ReadFile(path.toStdString(), aiProcess_Triangulate |
+                               aiProcess_FlipUVs);
 
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode){
         qDebug() << "ERROR::ASSIMP::" << importer.GetErrorString() << endl;
@@ -41,6 +58,9 @@ void Model::loadModel(QString path)
     }
 
     directory = QString::fromStdString( path.toStdString().substr(0, path.toStdString().find_last_of('/')));
+
+    m_GlobalInverseTransform = qMat44_aiMat44(scene->mRootNode->mTransformation);
+    m_GlobalInverseTransform = m_GlobalInverseTransform.inverted();
 
 
     processNode(scene->mRootNode, scene);
@@ -64,6 +84,9 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
     QVector<Vertex> vertices;
     QVector<unsigned int> indices;
     QVector<Texture> textures;
+
+    QVector<VertexBoneData> Bones;
+    Bones.resize(mesh-> mNumVertices);
 
     for(unsigned int i = 0; i < mesh-> mNumVertices; i++){
         Vertex vertex;
@@ -116,7 +139,40 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
     }
 
 
-    return Mesh(vertices, indices, textures);
+    {
+
+
+        for(uint i = 0 ; i < mesh->mNumBones ; i++){
+            uint BoneIndex = 0;
+            QString BoneName(mesh->mBones[i]->mName.data);
+
+            if( m_BoneMapping.find(BoneName) == m_BoneMapping.end()){
+                BoneIndex = m_NumBones;
+                m_NumBones++;
+                BoneInfo bi;
+
+                bi.BoneOffset.fill(0);
+                bi.FinalTransformation.fill(0);
+
+                m_BoneInfo.push_back(bi);
+            }
+            else{
+                BoneIndex = m_BoneMapping[BoneName];
+            }
+
+            m_BoneMapping[BoneName] = BoneIndex;
+            m_BoneInfo[BoneIndex].BoneOffset = qMat44_aiMat44(mesh->mBones[i]->mOffsetMatrix);
+
+            for(uint j = 0 ; j < mesh->mBones[i]->mNumWeights ; j++){
+                uint VertexID = mesh->mBones[i]->mWeights[j].mVertexId;
+                float Weight = mesh-> mBones[i]->mWeights[j].mWeight;
+                Bones[VertexID].AddBoneData(BoneIndex, Weight);
+            }
+        }
+    }
+
+
+    return Mesh(vertices, indices, textures, Bones);
 }
 
 QVector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type, QString typeName)
@@ -128,7 +184,7 @@ QVector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type
         mat->GetTexture(type, i, &str);
         bool skip = false;
 
-        for(unsigned int j = 0; j < textures_loaded.size(); j++){
+        for(int j = 0; j < textures_loaded.size(); j++){
             if(textures_loaded[j].path.compare(str.C_Str()) == 0){
                 textures.push_back(textures_loaded[j]);
                 skip = true;
@@ -154,3 +210,190 @@ QVector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type
 
     return textures;
 }
+
+
+zero4x4 Model::boneTransform(float timeInSeconds, QVector<zero4x4> &Transforms)
+{
+    QMatrix4x4 Identity;
+    Identity.setToIdentity();
+
+    float ticksPerSecond = scene->mAnimations[0]->mTicksPerSecond != 0 ?
+                scene->mAnimations[0]->mTicksPerSecond : 25.0f;
+
+    float TimeInTicks = timeInSeconds * ticksPerSecond;
+    float AnimationTime = fmod(TimeInTicks, scene->mAnimations[0]->mDuration);
+
+    ReadNodeHeirarchy(AnimationTime, scene->mRootNode, Identity);
+
+    Transforms.resize(m_NumBones);
+
+    for(uint i = 0 ; i < m_NumBones ; i++){
+        Transforms[i] = m_BoneInfo[i].FinalTransformation;
+    }
+}
+
+void Model::ReadNodeHeirarchy(float AnimationTime, const aiNode* pNode, const QMatrix4x4& ParentTransform){
+    QString NodeName(pNode->mName.data);
+
+    aiAnimation* pAnimation = scene->mAnimations[0];
+    QMatrix4x4 NodeTransformation(qMat44_aiMat44(pNode->mTransformation));
+
+    qDebug() << "NodeTransformation" << NodeTransformation;
+
+    const aiNodeAnim* pNodeAnim = FindNodeAnim(pAnimation, NodeName);
+
+    if(pNodeAnim){
+
+        // Interpolate scaling and generate scaling trasformation matrix
+        aiVector3D Scaling;
+        CalcInterpolatedScaling(Scaling, AnimationTime, pNodeAnim);
+
+        QMatrix4x4 ScalingM;
+        ScalingM.setToIdentity();
+        ScalingM.scale(Scaling.x, Scaling.y, Scaling.z );
+
+        // Interpolte rotation and generate rotation teansformation matrix
+        aiQuaternion RotationQ;
+        CalcInterpolatedRotation(RotationQ, AnimationTime, pNodeAnim);
+        QMatrix4x4 RotationM = qMat44_aiMat33(RotationQ.GetMatrix());
+
+        // Interpolate translation and generate translation transformation matrix
+        aiVector3D Translation;
+        CalcInterpolatedPosition(Translation, AnimationTime, pNodeAnim);
+
+        QMatrix4x4 TranslationM;
+        TranslationM.setToIdentity();
+        TranslationM.translate(Translation.x, Translation.y, Translation.z);
+
+
+        // Combine the above transformations
+        NodeTransformation = TranslationM * RotationM * ScalingM;
+    }
+
+    QMatrix4x4 GlobalTransformation = ParentTransform * NodeTransformation;
+
+    if(m_BoneMapping.find(NodeName) != m_BoneMapping.end()){
+        uint BoneIndex = m_BoneMapping[NodeName];
+        m_BoneInfo[BoneIndex].FinalTransformation = m_GlobalInverseTransform * GlobalTransformation * m_BoneInfo[BoneIndex].BoneOffset;
+    }
+
+    for(uint i = 0 ; i < pNode->mNumChildren ; i++){
+        ReadNodeHeirarchy(AnimationTime, pNode->mChildren[i], GlobalTransformation);
+    }
+}
+
+const aiNodeAnim* Model::FindNodeAnim(const aiAnimation* pAnimation, QString NodeName)
+{
+    for (uint i = 0 ; i < pAnimation->mNumChannels ; i++) {
+        const aiNodeAnim* pNodeAnim = pAnimation->mChannels[i];
+
+        if (QString(pNodeAnim->mNodeName.data) == NodeName) {
+            return pNodeAnim;
+        }
+    }
+
+    return NULL;
+}
+
+void Model::CalcInterpolatedScaling(aiVector3D& Out, float AnimationTime, const aiNodeAnim* pNodeAnim)
+{
+    if (pNodeAnim->mNumScalingKeys == 1) {
+        Out = pNodeAnim->mScalingKeys[0].mValue;
+        return;
+    }
+
+    uint ScalingIndex = FindScaling(AnimationTime, pNodeAnim);
+    uint NextScalingIndex = (ScalingIndex + 1);
+    assert(NextScalingIndex < pNodeAnim->mNumScalingKeys);
+    float DeltaTime = (float)(pNodeAnim->mScalingKeys[NextScalingIndex].mTime - pNodeAnim->mScalingKeys[ScalingIndex].mTime);
+    float Factor = (AnimationTime - (float)pNodeAnim->mScalingKeys[ScalingIndex].mTime) / DeltaTime;
+    assert(Factor >= 0.0f && Factor <= 1.0f);
+    const aiVector3D& Start = pNodeAnim->mScalingKeys[ScalingIndex].mValue;
+    const aiVector3D& End   = pNodeAnim->mScalingKeys[NextScalingIndex].mValue;
+    aiVector3D Delta = End - Start;
+    Out = Start + Factor * Delta;
+}
+
+uint Model::FindScaling(float AnimationTime, const aiNodeAnim* pNodeAnim)
+{
+    assert(pNodeAnim->mNumScalingKeys > 0);
+
+    for (uint i = 0 ; i < pNodeAnim->mNumScalingKeys - 1 ; i++) {
+        if (AnimationTime < (float)pNodeAnim->mScalingKeys[i + 1].mTime) {
+            return i;
+        }
+    }
+
+    assert(0);
+
+    return 0;
+}
+
+void Model::CalcInterpolatedRotation(aiQuaternion& Out, float AnimationTime, const aiNodeAnim* pNodeAnim)
+{
+    // we need at least two values to interpolate...
+    if (pNodeAnim->mNumRotationKeys == 1) {
+        Out = pNodeAnim->mRotationKeys[0].mValue;
+        return;
+    }
+
+    uint RotationIndex = FindRotation(AnimationTime, pNodeAnim);
+    uint NextRotationIndex = (RotationIndex + 1);
+    assert(NextRotationIndex < pNodeAnim->mNumRotationKeys);
+    float DeltaTime = (float)(pNodeAnim->mRotationKeys[NextRotationIndex].mTime - pNodeAnim->mRotationKeys[RotationIndex].mTime);
+    float Factor = (AnimationTime - (float)pNodeAnim->mRotationKeys[RotationIndex].mTime) / DeltaTime;
+    assert(Factor >= 0.0f && Factor <= 1.0f);
+    const aiQuaternion& StartRotationQ = pNodeAnim->mRotationKeys[RotationIndex].mValue;
+    const aiQuaternion& EndRotationQ   = pNodeAnim->mRotationKeys[NextRotationIndex].mValue;
+    aiQuaternion::Interpolate(Out, StartRotationQ, EndRotationQ, Factor);
+    Out = Out.Normalize();
+}
+
+uint Model::FindRotation(float AnimationTime, const aiNodeAnim* pNodeAnim)
+{
+    assert(pNodeAnim->mNumRotationKeys > 0);
+
+    for (uint i = 0 ; i < pNodeAnim->mNumRotationKeys - 1 ; i++) {
+        if (AnimationTime < (float)pNodeAnim->mRotationKeys[i + 1].mTime) {
+            return i;
+        }
+    }
+
+    assert(0);
+
+    return 0;
+}
+
+
+void Model::CalcInterpolatedPosition(aiVector3D& Out, float AnimationTime, const aiNodeAnim* pNodeAnim)
+{
+    if (pNodeAnim->mNumPositionKeys == 1) {
+        Out = pNodeAnim->mPositionKeys[0].mValue;
+        return;
+    }
+
+    uint PositionIndex = FindPosition(AnimationTime, pNodeAnim);
+    uint NextPositionIndex = (PositionIndex + 1);
+    assert(NextPositionIndex < pNodeAnim->mNumPositionKeys);
+    float DeltaTime = (float)(pNodeAnim->mPositionKeys[NextPositionIndex].mTime - pNodeAnim->mPositionKeys[PositionIndex].mTime);
+    float Factor = (AnimationTime - (float)pNodeAnim->mPositionKeys[PositionIndex].mTime) / DeltaTime;
+    assert(Factor >= 0.0f && Factor <= 1.0f);
+    const aiVector3D& Start = pNodeAnim->mPositionKeys[PositionIndex].mValue;
+    const aiVector3D& End = pNodeAnim->mPositionKeys[NextPositionIndex].mValue;
+    aiVector3D Delta = End - Start;
+    Out = Start + Factor * Delta;
+}
+
+uint Model::FindPosition(float AnimationTime, const aiNodeAnim* pNodeAnim)
+{
+    for (uint i = 0 ; i < pNodeAnim->mNumPositionKeys - 1 ; i++) {
+        if (AnimationTime < (float)pNodeAnim->mPositionKeys[i + 1].mTime) {
+            return i;
+        }
+    }
+
+    assert(0);
+
+    return 0;
+}
+

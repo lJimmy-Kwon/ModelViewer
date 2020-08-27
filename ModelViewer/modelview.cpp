@@ -32,13 +32,13 @@ void ModelView::initializeGL()
     // program for light source
     {
         program_light = new QOpenGLShaderProgram(); // only one variable to be allocated dynamicaly.
-        program_light->addShaderFromSourceFile(QOpenGLShader::Vertex  , ":/Shaders/model.vert");
+        program_light->addShaderFromSourceFile(QOpenGLShader::Vertex  , ":/Shaders/light.vert");
         program_light->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/Shaders/light.frag");
 
         program_light->link();
     }
 
-    models["ball"]  = new Model("/Users/jimmy/Desktop/Assets/Worm/worm.fbx");
+    models["ball"]  = new Model("/Users/jimmy/Desktop/Assets/Charactor/Character.dae");
     models["light"] = new Model("/Users/jimmy/Desktop/Assets/Light/light.obj");
 }
 

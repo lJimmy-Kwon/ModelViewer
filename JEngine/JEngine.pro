@@ -26,6 +26,7 @@ SOURCES += \
 HEADERS += \
     Camera/camera.h \
     Input/input.h \
+    Math/matrix.h \
     ModelLoader/DataStructures.inl \
     ModelLoader/mesh.h \
     ModelLoader/model.h \
