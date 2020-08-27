@@ -38,7 +38,7 @@ void ModelView::initializeGL()
         program_light->link();
     }
 
-    models["ball"]  = new Model("/Users/jimmy/Desktop/Assets/Charactor/Character.dae");
+    models["ball"]  = new Model("/Users/jimmy/Desktop/Assets/Charactor/Character.fbx");
     models["light"] = new Model("/Users/jimmy/Desktop/Assets/Light/light.obj");
 }
 
@@ -92,7 +92,7 @@ void ModelView::paintGL()
     checkInput();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     m_globalLightPosition = {0, 2, 0};
-    m_globalLightColor = {1.0, 0.5, 0.5};
+    m_globalLightColor = {0.7, 0.7, 0.7};
 
 
     //cube
