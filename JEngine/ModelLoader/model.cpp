@@ -28,11 +28,20 @@ void Model::Draw(QOpenGLShaderProgram &program)
         float RunningTime = (float)((double)clock() - (double)m_startTime) / CLOCKS_PER_SEC * 10;
 
         program.bind();
-        QVector<zero4x4> Transforms;
+
+        for (unsigned int i = 0 ; i < ARRAY_SIZE_IN_ELEMENTS(m_boneLocation) ; i++) {
+            char Name[128];
+            memset(Name, 0, sizeof(Name));
+            SNPRINTF(Name, sizeof(Name), "gBones[%d]", i);
+            m_boneLocation[i] = program.uniformLocation(Name);
+        }
+
+        QVector<Matrix4f> Transforms;
+
         this->boneTransform(RunningTime, Transforms);
 
         for(uint i = 0 ; i < Transforms.size() ; i++) {
-            program.setUniformValue(("gBones[" + QString::number(i) + "]").toStdString().c_str(), Transforms[i]);
+            glUniformMatrix4fv(m_boneLocation[i], 1, GL_TRUE, (const GLfloat*)Transforms[i]);
         }
 
         program.release();
@@ -59,9 +68,8 @@ void Model::loadModel(QString path)
 
     directory = QString::fromStdString( path.toStdString().substr(0, path.toStdString().find_last_of('/')));
 
-    m_GlobalInverseTransform = qMat44_aiMat44(scene->mRootNode->mTransformation);
-    m_GlobalInverseTransform = m_GlobalInverseTransform.inverted();
-
+    m_GlobalInverseTransform = scene->mRootNode->mTransformation;
+    m_GlobalInverseTransform.Inverse();
 
     processNode(scene->mRootNode, scene);
 
@@ -150,10 +158,6 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
                 BoneIndex = m_NumBones;
                 m_NumBones++;
                 BoneInfo bi;
-
-                bi.BoneOffset.fill(0);
-                bi.FinalTransformation.fill(0);
-
                 m_BoneInfo.push_back(bi);
             }
             else{
@@ -161,7 +165,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
             }
 
             m_BoneMapping[BoneName] = BoneIndex;
-            m_BoneInfo[BoneIndex].BoneOffset = qMat44_aiMat44(mesh->mBones[i]->mOffsetMatrix);
+            m_BoneInfo[BoneIndex].BoneOffset = mesh->mBones[i]->mOffsetMatrix;
 
             for(uint j = 0 ; j < mesh->mBones[i]->mNumWeights ; j++){
                 uint VertexID = mesh->mBones[i]->mWeights[j].mVertexId;
@@ -212,74 +216,67 @@ QVector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type
 }
 
 
-zero4x4 Model::boneTransform(float timeInSeconds, QVector<zero4x4> &Transforms)
+void Model::boneTransform(float timeInSeconds, QVector<Matrix4f> &Transforms)
 {
-    QMatrix4x4 Identity;
-    Identity.setToIdentity();
+    Matrix4f Identity;
+    Identity.InitIdentity();
 
-    float ticksPerSecond = scene->mAnimations[0]->mTicksPerSecond != 0 ?
-                scene->mAnimations[0]->mTicksPerSecond : 25.0f;
-
-    float TimeInTicks = timeInSeconds * ticksPerSecond;
-    float AnimationTime = fmod(TimeInTicks, scene->mAnimations[0]->mDuration);
+    float TicksPerSecond = (float)(scene->mAnimations[0]->mTicksPerSecond != 0 ? scene->mAnimations[0]->mTicksPerSecond : 25.0f);
+    float TimeInTicks = timeInSeconds * TicksPerSecond;
+    float AnimationTime = fmod(TimeInTicks, (float)scene->mAnimations[0]->mDuration);
 
     ReadNodeHeirarchy(AnimationTime, scene->mRootNode, Identity);
 
     Transforms.resize(m_NumBones);
 
-    for(uint i = 0 ; i < m_NumBones ; i++){
+    for (uint i = 0 ; i < m_NumBones ; i++) {
         Transforms[i] = m_BoneInfo[i].FinalTransformation;
     }
+
 }
 
-void Model::ReadNodeHeirarchy(float AnimationTime, const aiNode* pNode, const QMatrix4x4& ParentTransform){
+void Model::ReadNodeHeirarchy(float AnimationTime, const aiNode* pNode, const Matrix4f& ParentTransform){
     QString NodeName(pNode->mName.data);
 
-    aiAnimation* pAnimation = scene->mAnimations[0];
-    QMatrix4x4 NodeTransformation(qMat44_aiMat44(pNode->mTransformation));
+    const aiAnimation* pAnimation = scene->mAnimations[0];
 
-    qDebug() << "NodeTransformation" << NodeTransformation;
+    Matrix4f NodeTransformation(pNode->mTransformation);
 
     const aiNodeAnim* pNodeAnim = FindNodeAnim(pAnimation, NodeName);
 
-    if(pNodeAnim){
-
-        // Interpolate scaling and generate scaling trasformation matrix
+    if (pNodeAnim) {
+        // Interpolate scaling and generate scaling transformation matrix
         aiVector3D Scaling;
         CalcInterpolatedScaling(Scaling, AnimationTime, pNodeAnim);
+        Matrix4f ScalingM;
+        ScalingM.InitScaleTransform(Scaling.x, Scaling.y, Scaling.z);
 
-        QMatrix4x4 ScalingM;
-        ScalingM.setToIdentity();
-        ScalingM.scale(Scaling.x, Scaling.y, Scaling.z );
-
-        // Interpolte rotation and generate rotation teansformation matrix
+        // Interpolate rotation and generate rotation transformation matrix
         aiQuaternion RotationQ;
         CalcInterpolatedRotation(RotationQ, AnimationTime, pNodeAnim);
-        QMatrix4x4 RotationM = qMat44_aiMat33(RotationQ.GetMatrix());
+        Matrix4f RotationM = Matrix4f(RotationQ.GetMatrix());
 
         // Interpolate translation and generate translation transformation matrix
         aiVector3D Translation;
         CalcInterpolatedPosition(Translation, AnimationTime, pNodeAnim);
-
-        QMatrix4x4 TranslationM;
-        TranslationM.setToIdentity();
-        TranslationM.translate(Translation.x, Translation.y, Translation.z);
-
+        Matrix4f TranslationM;
+        TranslationM.InitTranslationTransform(Translation.x, Translation.y, Translation.z);
 
         // Combine the above transformations
         NodeTransformation = TranslationM * RotationM * ScalingM;
     }
 
-    QMatrix4x4 GlobalTransformation = ParentTransform * NodeTransformation;
+    Matrix4f GlobalTransformation = ParentTransform * NodeTransformation;
 
-    if(m_BoneMapping.find(NodeName) != m_BoneMapping.end()){
+    if (m_BoneMapping.find(NodeName) != m_BoneMapping.end()) {
         uint BoneIndex = m_BoneMapping[NodeName];
         m_BoneInfo[BoneIndex].FinalTransformation = m_GlobalInverseTransform * GlobalTransformation * m_BoneInfo[BoneIndex].BoneOffset;
     }
 
-    for(uint i = 0 ; i < pNode->mNumChildren ; i++){
+    for (uint i = 0 ; i < pNode->mNumChildren ; i++) {
         ReadNodeHeirarchy(AnimationTime, pNode->mChildren[i], GlobalTransformation);
     }
+
 }
 
 const aiNodeAnim* Model::FindNodeAnim(const aiAnimation* pAnimation, QString NodeName)

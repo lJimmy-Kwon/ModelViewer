@@ -11,6 +11,8 @@
 #include <QOpenGLBuffer>
 #include <QOpenGLTexture>
 
+#include "Math/matrix.h"
+
 struct VertexBoneData
 {
     uint IDs[4] = {0, 0, 0, 0};
@@ -95,13 +97,13 @@ struct Texture{
 
 struct BoneInfo
 {
-    QMatrix4x4 BoneOffset;
-    QMatrix4x4 FinalTransformation;
+    Matrix4f BoneOffset;
+    Matrix4f FinalTransformation;
 
     BoneInfo()
     {
-        BoneOffset.fill(0);
-        FinalTransformation.fill(0);
+        BoneOffset.SetZero();
+        FinalTransformation.SetZero();
     }
 };
 
